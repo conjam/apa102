@@ -21,11 +21,9 @@
 void main(void) {
 	uint32_t color = 0;
 	uint32_t CORD_INDEX;
-	uint32_t BRIT = 0xFF000000;
-	uint32_t BLU = 0x00FF0000;
-	uint32_t GREE =0x0000FF00;
-	uint32_t RED = 0x000000FF;
-
+	uint32_t BRIT_GREE = 65280;
+	uint32_t BLURED = 255 ;
+	uint32_t colorcon = BRIT_GREE - 6144;
 
 	// We set the system clock to 16 mHZ
 	SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
@@ -52,27 +50,27 @@ void main(void) {
 	// This means that data is "loaded" into the register on a rising edge, and set off through the SSI
 	// on a falling edge I think.
 	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
-                       SSI_MODE_MASTER, 1000000, 16);
+                       SSI_MODE_MASTER, 10, 16);
 
 	SSIEnable(SSI0_BASE);
-
+while(1){
 	SSIDataPut(SSI0_BASE, 0);
 	while(SSIBusy(SSI0_BASE)) {}
 	SSIDataPut(SSI0_BASE, 0);
 	while(SSIBusy(SSI0_BASE)) {}
 
-	for(CORD_INDEX = 0; CORD_INDEX < 120; ++CORD_INDEX){
-		if(CORD_INDEX % 2 == 0)
-			color |= BRIT;
+	for(CORD_INDEX = 0; CORD_INDEX < 160; ++CORD_INDEX){
+ 	if(CORD_INDEX % 2 == 0)
+			color = color | colorcon;
 		switch(CORD_INDEX % 6){
-			case(0):
-				color |= BLU;
+			case(0): //goes blu
+				color = color | BLURED / 4;
 				break;
-			case(3):
-				color |= GREE;
+			case(3): //goes green
+				color = color | BRIT_GREE / 4;
 				break;
-			case(5):
-				color |= RED;
+			case(5): //goes red
+				color = color | BLURED / 4;
 				break;
 			default:
 				break;
@@ -80,13 +78,34 @@ void main(void) {
 		SSIDataPut(SSI0_BASE, color);
 		//wait for things to finish
 		while(SSIBusy(SSI0_BASE)) {}
-		if(CORD_INDEX % 2 == 1)
-			color = 0;
+		 color = 0;
 	}
+
 	for(CORD_INDEX = 0; CORD_INDEX < 2; CORD_INDEX++){
 		SSIDataPut(SSI0_BASE, 0);
 		while(SSIBusy(SSI0_BASE)) {}
 	}
-	SSIDisable(SSI0_BASE);
+
+	SSIDataPut(SSI0_BASE, 0);
+	while(SSIBusy(SSI0_BASE)) {}
+	SSIDataPut(SSI0_BASE, 0);
+	while(SSIBusy(SSI0_BASE)) {}
+	color = 0;
+	for(CORD_INDEX = 0; CORD_INDEX < 160; ++CORD_INDEX){
+	 	if(CORD_INDEX % 2 == 0)
+				color = color | 57344;
+	 	SSIDataPut(SSI0_BASE, color);
+	 	//wait for things to finish
+	 	while(SSIBusy(SSI0_BASE)) {}
+	 	 color = 0;
+	}
+
+	for(CORD_INDEX = 0; CORD_INDEX < 2; CORD_INDEX++){
+			SSIDataPut(SSI0_BASE, 0);
+			while(SSIBusy(SSI0_BASE)) {}
+	}
+}
+	//SSIDisable(SSI0_BASE);
+
 	return;
 }
